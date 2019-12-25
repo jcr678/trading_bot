@@ -8,5 +8,6 @@ This isn't necessary, but makes it easier to avoid dependency/version problems. 
 3. `docker run --rm -v /path/to/project/directory:/home/ sesank/trading_bot:latest python /home/main.py`
 
 
-<p> `-v` flag mounts host folders into container </p>
+`-v` flag mounts host folders into container
+`--rm` cleans up container files after running them, so you won't have extra shit left over from running a docker image.
 <p> You can make your own docker containers from existing ones if you want to try out different libraries </p>
