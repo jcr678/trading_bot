@@ -10,4 +10,4 @@ This isn't necessary, but makes it easier to avoid dependency/version problems. 
 
 `-v` flag mounts host folders into container <br>
 `--rm` cleans up container files after running them, so you won't have extra shit left over from running a docker image.
-<p> You can make your own docker containers from existing ones if you want to try out different libraries </p>
+<p> You can make your own docker images from existing ones if you want to try out different libraries </p>
