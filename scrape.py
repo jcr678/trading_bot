@@ -7,6 +7,7 @@ import datetime
 import pytz
 import time as time_right_now
 import sentiment
+import manage_data
 
 stocks_list = ['TSLA', 'GOOGL', 'AAPL', 'MSFT', 'BABA']
 stock_dict = {}
@@ -54,12 +55,12 @@ def scrape(stocks = stocks_list, dictionary = stock_dict):
         # append info
         entry = [date, time, price, fifty_day_SMA, t_hundred_day_SMA, m_open, p_close, volume, sent, subj]
         stock_dict[ticker] = stock_dict[ticker].append(pd.Series(entry, index=columns), ignore_index=True)
-
+    manage_data.manage_csv(dictionary)
 
 def display_information(stocks = stocks_list, dictionary = stock_dict):
     for ticker in stocks_list:
         print(ticker + ": ")
         pd.options.display.max_columns = 13
         print(stock_dict[ticker])
-        print("*" * 30)
-        print("*" * 30, '\n')
+        print("*" * 60)
+        print("*" * 60, '\n')
