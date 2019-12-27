@@ -32,7 +32,7 @@ def scrape(stocks = stocks_list, dictionary = stock_dict):
             url = base_url + ticker + rest_of_url + ticker
             r = requests.get(url)
             soup = bs4.BeautifulSoup(r.text, 'lxml')
-            print(ticker + ": " + url)
+            # print(ticker + ": " + url)
 
             key_stats_url = base_url + ticker + '/key-statistics' + rest_of_url + ticker
             key_stats_req = requests.get(key_stats_url)
@@ -64,7 +64,7 @@ def scrape(stocks = stocks_list, dictionary = stock_dict):
             # append info
             entry = [date, time, price, fifty_day_SMA, t_hundred_day_SMA, m_open, p_close, volume, float(sent), float(subj)]
             stock_dict[ticker] = stock_dict[ticker].append(pd.Series(entry, index=columns), ignore_index=True)
-            t.sleep(30)
+        t.sleep(30)
     manage_data.manage_csv(dictionary)
 
 def display_information(stocks = stocks_list, dictionary = stock_dict):
