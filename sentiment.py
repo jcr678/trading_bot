@@ -115,14 +115,14 @@ class Analysis:
             # print(self.subjectivity)
     def run_candlestick(self):
         responseCandleStick = requests.get(self.urlCandleStick)
-		soup = BeautifulSoup(responseCandleStick.text, 'html5')
-		headline_result = soup.find('div', {'id':'dailypattern'})
-		#print(re.findall(r'"([^"]*)"', str(headline_result))[3])
-		candleStickString = re.findall(r'"([^"]*)"', str(headline_result))[3]
-		if candleStickString in self.candlestick_dict:
-			self.candlestick = float(self.candlestick_dict[candleStickString])/66.0 #normalize between 0 and 1
-		else:
-			print("ERROR!!!!") #candlestick does not exist in dict
-	 		self.candlestick = -1
-		#print(self.candlestick)
+	soup = BeautifulSoup(responseCandleStick.text, 'html5')
+	headline_result = soup.find('div', {'id':'dailypattern'})
+	#print(re.findall(r'"([^"]*)"', str(headline_result))[3])
+	candleStickString = re.findall(r'"([^"]*)"', str(headline_result))[3]
+	if candleStickString in self.candlestick_dict:
+		self.candlestick = float(self.candlestick_dict[candleStickString])/66.0 #normalize between 0 and 1
+	else:
+		print("ERROR!!!!") #candlestick does not exist in dict
+	 	self.candlestick = -1
+	#print(self.candlestick)
         return self.candlestick
