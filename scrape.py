@@ -1,8 +1,7 @@
-import pandas as pd
-import xml
+import get_data
 import bs4
 import requests
-from bs4 import BeautifulSoup
+import pandas as pd
 import datetime
 import pytz
 import time as time_right_now
@@ -44,18 +43,19 @@ def scrape(stocks = stocks_list, dictionary = stock_dict):
             time = now.strftime("%H:%M")
 
             # price
-            price = float( soup.find("div", {'class':"My(6px) Pos(r) smartphone_Mt(6px)"}).find('span').text.replace(',', '') )
+            price = get_data.get_price(soup)
 
             # Moving Averages
-            fifty_day_SMA = float( stats_soup.find_all("tr" , {"class":"Bxz(bb) H(36px) BdB Bdbc($seperatorColor)"})[4].find("td", {"class": "Fz(s) Fw(500) Ta(end) Pstart(10px) Miw(60px)"}).text.replace(",", '') )
-            t_hundred_day_SMA = float( stats_soup.find_all("tr" , {"class":"Bxz(bb) H(36px) BdB Bdbc($seperatorColor)"})[5].find("td", {"class": "Fz(s) Fw(500) Ta(end) Pstart(10px) Miw(60px)"}).text.replace(",", '') )
+            fifty_day_SMA = get_data.get_50_SMA(stats_soup)
+            t_hundred_day_SMA = get_data.get_200_SMA(stats_soup) 
 
             # market open/close
-            m_open = float( soup.find_all("td", {"class":"Ta(end) Fw(600) Lh(14px)"})[1].find('span').text.replace(',', '') )
-            p_close = float( soup.find_all("td", {"class":"Ta(end) Fw(600) Lh(14px)"})[0].find('span').text.replace(',', '') )
+            m_open = get_data.get_open(soup)
+            p_close = get_data.get_close(soup) 
 
             # volume
-            volume = float( soup.find_all("td", {"class":"Ta(end) Fw(600) Lh(14px)"})[6].find('span').text.replace(',', '') )
+            volume = get_data.get_vol(soup) 
+            print(volume)
 
             # sentiment
             analyze = sentiment.Analysis(ticker);
@@ -74,3 +74,4 @@ def display_information(stocks = stocks_list, dictionary = stock_dict):
         print(stock_dict[ticker])
         print("*" * 60)
         print("*" * 60, '\n')
+
