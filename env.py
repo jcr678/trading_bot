@@ -44,11 +44,11 @@ class CustomEnv(gym.Env):
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
 
     # Action space: discrete # of action types (buy, sell, and hold) &
-    # continuous spectrum of amounts to buy/sell (0-100% of account).
+    # continuous spectrum of amounts to buy/sell (0-100% of account/n_stocks).
     # Actions are 0,1,2 and percent for n stocks
     self.action_space = spaces.Box(low=np.array([0, 0]*self.n_stocks), high=np.array([3, 1]*self.n_stocks), dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
-    self.observation_space = spaces.Box(low=0, high=1, shape=(self.OHLC_ect, self.n_observes, self.n_stocks), dtype=np.float16)
+    self.observation_space = spaces.Box(low=0, high=1, shape=(self.OHLC_ect, self.n_observes*self.n_stocks), dtype=np.float16)
   def _next_observation(self): # Return shape of (self.OHLC_ect, self.n_observes, self.n_stocks) w/ 0 <= values <= 1
     pass
   def _take_action(self, action): # Buy Sell ect..
