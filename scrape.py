@@ -64,8 +64,8 @@ def scrape(stocks = stocks_list, dictionary = stock_dict):
             # append info
             entry = [date, time, price, fifty_day_SMA, t_hundred_day_SMA, m_open, p_close, volume, float(sent), float(subj)]
             stock_dict[ticker] = stock_dict[ticker].append(pd.Series(entry, index=columns), ignore_index=True)
-        t.sleep(30)
-    manage_data.manage_csv(dictionary)
+        manage_data.manage_csv(dictionary)
+        t.sleep(60)
 
 def display_information(stocks = stocks_list, dictionary = stock_dict):
     for ticker in stocks_list:
