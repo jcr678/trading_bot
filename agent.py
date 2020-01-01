@@ -72,9 +72,8 @@ class DQNAgent(object):
 
 
   def load(self, name):
-    self.model.load_weights(name)
-
+    pass # Pickle
 
   def save(self, name):
-    self.model.save_weights(name)
+    pass # Pickle
 
