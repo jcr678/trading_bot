@@ -60,3 +60,7 @@ class ActorCriticAgent():
         
         self.actor.fit([state, delta], actions, verbose=0)
         self.critic.fit(state, target, verbose=0)
+    def saveWeights(self):
+        pass # Pickle
+    def loadWeights(self):
+        pass # Pickle
