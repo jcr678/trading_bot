@@ -71,9 +71,9 @@ class DQNAgent(object):
       self.epsilon *= self.epsilon_decay
 
 
-  def load(self, name):
-    pass # Pickle
+  def load(self, filename): #example of filename would be filename = 'finalized_model.sav'
+    self.model = pickle.load(open(filename, 'rb')) # Pickle
 
-  def save(self, name):
-    pass # Pickle
+  def save(self, filename):
+    pickle.dump(self.model, open(filename, 'wb')) # Pickle
 
