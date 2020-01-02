@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 #I want to credit the creator of this code, ShuaiW on github.
 from collections import deque
 import random
@@ -11,6 +5,7 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+import pickle
 
 class DQNAgent(object):
   """ A simple Deep Q agent """
