@@ -42,15 +42,44 @@ class CustomEnv(gym.Env):
     self.cur_step = 0
     self.n_observes = 6 # Inclusive of current observe
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
-
+    self.basic_values
+    
     # Action space: discrete # of action types (buy, sell, and hold) &
     # continuous spectrum of amounts to buy/sell (0-100% of account/n_stocks).
     # Actions are 0,1,2 and percent for n stocks
     self.action_space = spaces.Box(low=np.array([0, 0]*self.n_stocks), high=np.array([3, 1]*self.n_stocks), dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
-    self.observation_space = spaces.Box(low=0, high=1, shape=(self.OHLC_ect, self.n_observes*self.n_stocks), dtype=np.float16)
-  def _next_observation(self): # Return shape of (self.OHLC_ect, self.n_observes, self.n_stocks) w/ 0 <= values <= 1
-    pass
+    self.observation_space = spaces.Box(low=0, high=1, shape=(((self.+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
+                                        dtype=np.float16)
+  def _next_observation(self):
+    frame = []
+    for stock in self.stocks_list:
+        f = np.array([[ #assuming normalized
+                    df.loc[self.current_step - self.n_observes: self.current_step,
+                           f"{stock}_Date"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Time"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Price"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_50-Day MA"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_200-Day MA"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Market Open"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Prev Close"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Trading Volume"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Sentiment"].values,
+                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Subjectivity"].values
+                ]])
+
+        frame = np.append(frame, f)
+                    # Append additional data and scale each value to between 0-1
+    obs = np.append(frame, [ # has length of basic values
+                balance / MAX_ACCOUNT_BALANCE,
+                max_net_worth / MAX_ACCOUNT_BALANCE,
+                shares_held / MAX_NUM_SHARES,
+                cost_basis / MAX_SHARE_PRICE,
+                total_shares_sold / MAX_NUM_SHARES,
+                total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
+            ], axis=0)
+    return obs
+     
   def _take_action(self, action): # Buy Sell ect..
     pass
   def _step(self, action):
