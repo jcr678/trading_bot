@@ -4,6 +4,7 @@ from keras.layers import Dense, Input
 from keras.models import Model
 from keras.optimizers import Adam
 import numpy as np
+import pickle
 
 class ActorCriticAgent():
     def __init__(self, n_actions=4, observation_dims=8):
@@ -60,7 +61,13 @@ class ActorCriticAgent():
         
         self.actor.fit([state, delta], actions, verbose=0)
         self.critic.fit(state, target, verbose=0)
-    def saveWeights(self):
-        pass # Pickle
-    def loadWeights(self):
-        pass # Pickle
+        
+    def load(self, filenameactor, filenamecritic, filenamepolicy): #example of filename would be filename = 'finalized_model.sav'
+        self.actor = pickle.load(open(filenameactor, 'rb')) # Pickle
+        self.critic = pickle.load(open(filenamecritic, 'rb')) # Pickle
+        self.policy = pickle.load(open(filenamepolicy, 'rb'))
+        
+    def save(self, filenameactor, filenamecritic, filenamepolicy):
+        pickle.dump(self.actor, open(filenameactor, 'wb')) # Pickle
+        pickle.dump(self.critic, open(filenamecritic, 'wb')) # Pickle
+        pickle.dump(self.policy, open(filenamepolicy, 'wb')) # Pickle
