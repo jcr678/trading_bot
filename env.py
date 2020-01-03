@@ -11,7 +11,7 @@ import numpy as np
 
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
-MAX_SHARE_PRICE = 10000
+MAX_SHARE_PRICE = 20000
 
 INITIAL_ACCOUNT_BALANCE = 10000
 
@@ -80,8 +80,16 @@ class CustomEnv(gym.Env):
             ], axis=0)
     return obs
      
-  def _take_action(self, action): # Buy Sell ect.. NEED TO CALL ALPACA IF NOT A TEST!!!!
-        #use self.isATest
+  def _take_action(self, action): # Buy Sell ect..
+        #use self.isATest to know if u actually buy stocks
+        punish = 0
+        for stock in self.stocks_list:
+          #take actions and edit punish
+          if self.isATest:
+            #test
+          else:
+            #not test
+        return punish
   def test_buy(): # do not call alpaca/robinhood
         pass
   def real_buy(): # call alpaca/robinhood
@@ -92,7 +100,7 @@ class CustomEnv(gym.Env):
         pass
   def _step(self, action):
         # Execute one time step within the environment
-        self._take_action(action)
+        self.punish = self._take_action(action) # Need to punish if we sell when we dont have stock/buy when have not enough $
 
         self.current_step += 1
 
@@ -101,7 +109,7 @@ class CustomEnv(gym.Env):
 
         delay_modifier = (self.current_step / MAX_STEPS)
 
-        reward = self.balance * delay_modifier # Need to punish if we sell when we dont have stock/buy when have not enough $
+        reward = self.balance * delay_modifier #Use self.punish here
         done = self.net_worth <= 0
 
         obs = self._next_observation()
