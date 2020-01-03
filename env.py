@@ -17,7 +17,7 @@ INITIAL_ACCOUNT_BALANCE = 10000
 
 
 class CustomEnv(gym.Env):
-  __init__(self, dataFrame_list, stocks_list): # order of df list and stocks list MUST be same
+  __init__(self, dataFrame_list, stocks_list, isATest): # order of df list and stocks list MUST be same
     super(CustomEnv, self).__init__()
 
     main_df = pd.DataFrame()
@@ -35,18 +35,19 @@ class CustomEnv(gym.Env):
           main_df = main_df.join(dataFrame_list[stock])
 
     self.stocks_list = stocks_list
-    self.reward_range = (0, MAX_ACCOUNT_BALANCE)
+    self.reward_range = (-MAX_ACCOUNT_BALANCE, MAX_ACCOUNT_BALANCE) # go negative if u buy when no money/sell when no stock
     self.n_stocks = len(stocks_list)
     self.dataFrame = main_df
     self.cur_step = 0
     self.n_observes = 2*60*24 # not including current observe (must add one)
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
-    self.basic_values = 6
+    self.basic_values = 6 # balance, net worth ect
+    self.isATest = isATest # Boolean: call alpaca or do not call alpaca
     
     # Action space: discrete # of action types (buy, sell, and hold) &
     # continuous spectrum of amounts to buy/sell (0-100% of account/n_stocks).
-    # Actions are 0,1,2 and percent for n stocks
-    self.action_space = spaces.Box(low=np.array([0, 0]*self.n_stocks), high=np.array([3, 1]*self.n_stocks), dtype=np.float16)
+    # Actions are 0,1,2 and percent/n for n stocks
+    self.action_space = spaces.Box(low=0, high=1, shape=(self.n_stocks*2,) dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
     self.observation_space = spaces.Box(low=0, high=1, shape=(((self.n_observes+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
                                         dtype=np.float16)
@@ -79,8 +80,16 @@ class CustomEnv(gym.Env):
             ], axis=0)
     return obs
      
-  def _take_action(self, action): # Buy Sell ect.. NEED TO CALL ALPACA!!!!
-    pass
+  def _take_action(self, action): # Buy Sell ect.. NEED TO CALL ALPACA IF NOT A TEST!!!!
+        #use self.isATest
+  def test_buy(): # do not call alpaca/robinhood
+        pass
+  def real_buy(): # call alpaca/robinhood
+        pass
+  def test_sell(): # do not call alpaca/robinhood
+        pass
+  def real_sell(): # call alpaca/robinhood
+        pass
   def _step(self, action):
         # Execute one time step within the environment
         self._take_action(action)
@@ -114,5 +123,5 @@ class CustomEnv(gym.Env):
 
         return self._next_observation()
         # Do other stuff
-  def render(self, mode='human', close=False):# Print stuff to console
-    pass
+    def render(self, mode='human', close=False):# Print stuff to console
+        pass
