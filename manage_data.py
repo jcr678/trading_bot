@@ -15,7 +15,16 @@ def manage_csv(stock_dict):
             new_df.to_csv(csv_path, index=False)
             print(new_df.head())
 
+def merge_csvs(lst_csvs = os.listdir('./stocks')):
+    df_dict = {}
+    for tick in lst_csvs:
+        df_dict[tick.split('.csv')[0]] = pd.read_csv('./stocks/' + tick)
+    merged = pd.concat(df_dict, axis=1)
+    # print(merged.head())
+    merged.to_csv('MERGEDSTOCKDATA.csv')
+    return merged
 
+# merge_csvs()
 '''
 Different Solution:
 with open("write.csv","a") as f:
