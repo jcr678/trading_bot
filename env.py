@@ -90,13 +90,13 @@ class CustomEnv(gym.Env):
           else:
             #not test
         return punish
-  def test_buy(): # do not call alpaca/robinhood
+  def test_buy(self, n_stocks): # do not call alpaca/robinhood
         pass
-  def real_buy(): # call alpaca/robinhood
+  def real_buy(self, n_stocks): # call alpaca/robinhood
         pass
-  def test_sell(): # do not call alpaca/robinhood
+  def test_sell(self, n_stocks): # do not call alpaca/robinhood
         pass
-  def real_sell(): # call alpaca/robinhood
+  def real_sell(self, n_stocks): # call alpaca/robinhood
         pass
   def _step(self, action):
         # Execute one time step within the environment
