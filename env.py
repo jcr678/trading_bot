@@ -39,7 +39,7 @@ class CustomEnv(gym.Env):
     self.n_stocks = len(stocks_list)
     self.dataFrame = main_df
     self.cur_step = 0
-    self.n_observes = 6*60*24 # not including current observe (must add one)
+    self.n_observes = 2*60*24 # not including current observe (must add one)
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
     self.basic_values = 6
     
