@@ -1,3 +1,7 @@
+# https://towardsdatascience.com/creating-a-custom-openai-gym-environment-for-stock-trading-be532be3910e
+# ^^ full github to above: https://github.com/notadamking/Stock-Trading-Environment
+# https://github.com/llSourcell/Q-Learning-for-Trading/blob/master/envs.py
+
 import gym
 from gym import spaces
 import random
@@ -7,18 +11,13 @@ import numpy as np
 
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
-MAX_SHARE_PRICE = 5000
-MAX_OPEN_POSITIONS = 5
-MAX_STEPS = 20000
+MAX_SHARE_PRICE = 10000
 
 INITIAL_ACCOUNT_BALANCE = 10000
-# https://towardsdatascience.com/creating-a-custom-openai-gym-environment-for-stock-trading-be532be3910e
-# ^^ full github to above: https://github.com/notadamking/Stock-Trading-Environment
-# https://github.com/llSourcell/Q-Learning-for-Trading/blob/master/envs.py
 
 
 class CustomEnv(gym.Env):
-  __init__(self, dataFrame_list, stocks_list): # order of df list and stocks list MUST be same!!!!!!!!
+  __init__(self, dataFrame_list, stocks_list): # order of df list and stocks list MUST be same
     super(CustomEnv, self).__init__()
 
     main_df = pd.DataFrame()
@@ -31,7 +30,7 @@ class CustomEnv(gym.Env):
                                             'Subjectivity': f"{stock}_Subjectivity",}, inplace=True)
       if len(main_df)==0:  # If dataframe is empty
           main_df = dataFrame_list[stock]  # then it's just the current df
-          columns = dataFrame_list[stock].columns
+          n_columns = dataFrame_list[stock].columns
       else:  # otherwise, join this data to the main one
           main_df = main_df.join(dataFrame_list[stock])
 
@@ -42,14 +41,14 @@ class CustomEnv(gym.Env):
     self.cur_step = 0
     self.n_observes = 6 # Inclusive of current observe
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
-    self.basic_values
+    self.basic_values = 6
     
     # Action space: discrete # of action types (buy, sell, and hold) &
     # continuous spectrum of amounts to buy/sell (0-100% of account/n_stocks).
     # Actions are 0,1,2 and percent for n stocks
     self.action_space = spaces.Box(low=np.array([0, 0]*self.n_stocks), high=np.array([3, 1]*self.n_stocks), dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
-    self.observation_space = spaces.Box(low=0, high=1, shape=(((self.+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
+    self.observation_space = spaces.Box(low=0, high=1, shape=(((self.n_observes)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
                                         dtype=np.float16)
   def _next_observation(self):
     frame = []
@@ -70,7 +69,7 @@ class CustomEnv(gym.Env):
 
         frame = np.append(frame, f)
                     # Append additional data and scale each value to between 0-1
-    obs = np.append(frame, [ # has length of basic values
+    obs = np.append(frame, [ # has length of basic_values
                 balance / MAX_ACCOUNT_BALANCE,
                 max_net_worth / MAX_ACCOUNT_BALANCE,
                 shares_held / MAX_NUM_SHARES,
@@ -80,17 +79,40 @@ class CustomEnv(gym.Env):
             ], axis=0)
     return obs
      
-  def _take_action(self, action): # Buy Sell ect..
+  def _take_action(self, action): # Buy Sell ect.. NEED TO CALL ALPACA!!!!
     pass
   def _step(self, action):
-    # Execute 1 time step within the environment
-    self._take_action(action)
-    self.current_step += 1
+        # Execute one time step within the environment
+        self._take_action(action)
 
-    # Do other stuff
-    return obs, reward, done, {}
-  def reset(self):# Reset the state of the environment to an initial state
-    self.cur_step = 0
-    # Do other stuff
+        self.current_step += 1
+
+        if self.current_step > len(main_df.index) - 1:
+            self.current_step = 0
+
+        delay_modifier = (self.current_step / MAX_STEPS)
+
+        reward = self.balance * delay_modifier # Need to punish if we sell when we dont have stock/buy when have not enough $
+        done = self.net_worth <= 0
+
+        obs = self._next_observation()
+
+        return obs, reward, done, {}
+   def reset(self):# Reset the state of the environment to an initial state
+    # Reset the state of the environment to an initial state
+        self.balance = INITIAL_ACCOUNT_BALANCE
+        self.net_worth = INITIAL_ACCOUNT_BALANCE
+        self.max_net_worth = INITIAL_ACCOUNT_BALANCE
+        self.shares_held = 0
+        self.cost_basis = 0
+        self.total_shares_sold = 0
+        self.total_sales_value = 0
+
+        # Set the current step to a random point within the data frame
+        self.current_step = random.randint(
+            0, len(main_df.index) - 1)
+
+        return self._next_observation()
+        # Do other stuff
   def render(self, mode='human', close=False):# Print stuff to console
     pass
