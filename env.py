@@ -39,7 +39,7 @@ class CustomEnv(gym.Env):
     self.n_stocks = len(stocks_list)
     self.dataFrame = main_df
     self.cur_step = 0
-    self.n_observes = 6 # Inclusive of current observe
+    self.n_observes = 6*60*24 # not including current observe (must add one)
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
     self.basic_values = 6
     
@@ -48,7 +48,7 @@ class CustomEnv(gym.Env):
     # Actions are 0,1,2 and percent for n stocks
     self.action_space = spaces.Box(low=np.array([0, 0]*self.n_stocks), high=np.array([3, 1]*self.n_stocks), dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
-    self.observation_space = spaces.Box(low=0, high=1, shape=(((self.n_observes)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
+    self.observation_space = spaces.Box(low=0, high=1, shape=(((self.n_observes+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
                                         dtype=np.float16)
   def _next_observation(self):
     frame = []
