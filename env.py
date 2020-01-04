@@ -76,7 +76,7 @@ class CustomEnv(gym.Env):
                 balance / MAX_ACCOUNT_BALANCE,
                 max_net_worth / MAX_ACCOUNT_BALANCE,
                 shares_held / MAX_NUM_SHARES, # Need to update all use list
-                cost_basis / MAX_SHARE_PRICE, # Need to update all use list
+                cost_basis / MAX_SHARE_PRICE, # "SAME" MAYBE DELETE COST BASIS IDK
                 total_shares_sold / MAX_NUM_SHARES, # Need to update all use list
                 total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE), # ?Need to update all use list?
             ], axis=0)
