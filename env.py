@@ -22,8 +22,7 @@ class CustomEnv(gym.Env):
 
     main_df = pd.DataFrame()
     for stock in stocks_list: # Join all stocks df into single df
-      dataFrame_list[stock].rename(columns={'Date': f"{stock}_Date", "Time": f"{stock}_Time" \\
-                                            'Price': f"{stock}_Price",'50-Day MA': f"{stock}_50-Day MA",\\
+      dataFrame_list[stock].rename(columns={'Price': f"{stock}_Price",'50-Day MA': f"{stock}_50-Day MA",\\
                                             '200-Day MA': f"{stock}_200-Day MA",'Market Open': f"{stock}_Market Open",\\
                                             'Market Open': f"{stock}_Market Open",'Prev Close': f"{stock}_Prev Close",\\
                                             'Trading Volume': f"{stock}_Trading Volume",'Sentiment': f"{stock}_Sentiment",\\
@@ -32,6 +31,7 @@ class CustomEnv(gym.Env):
           main_df = dataFrame_list[stock]  # then it's just the current df
           n_columns = dataFrame_list[stock].columns
       else:  # otherwise, join this data to the main one
+          dataFrame_list[stock].drop(columns=['Date', 'Time']) # Delete the date/time if it is not the first stock b/c repeats
           main_df = main_df.join(dataFrame_list[stock])
           
     main_df.dropna(inplace=True) #drop nan values
@@ -54,7 +54,7 @@ class CustomEnv(gym.Env):
     self.observation_space = spaces.Box(low=0, high=1, shape=(((self.n_observes+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
                                         dtype=np.float16) # Need to change shape because basic values are diff for diff stocks
   def _next_observation(self):
-    frame = []
+    '''
     for stock in self.stocks_list:
         f = np.array([[ #assuming normalized between 0 and 1
                     df.loc[self.current_step - self.n_observes: self.current_step,
@@ -80,6 +80,22 @@ class CustomEnv(gym.Env):
                 total_shares_sold / MAX_NUM_SHARES, # Need to update all use list
                 total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE), # ?Need to update all use list?
             ], axis=0)
+    '''
+    obs = []
+    for i in range(self.current_step - self.n_observes, self.current_step+1):
+        #get given row as list
+        row = main_df.iloc[[i]].tolist()
+        #append other data to list (data that is observed by all stocks)
+        row.append(balance / MAX_ACCOUNT_BALANCE)
+        row.append(max_net_worth / MAX_ACCOUNT_BALANCE)
+        #append data that is tied to a given stock and not observed by all stocks
+        for i, stock in self.stocks_list:
+            row.append(self.shares_held[i] / MAX_NUM_SHARES)
+            row.append(cost_basis[i] / MAX_SHARE_PRICE)
+            row.append(total_shares_sold[i] / MAX_NUM_SHARES)
+            row.append(total_sales_value[i] / (MAX_NUM_SHARES * MAX_SHARE_PRICE))
+        #append the row to the obs
+        obs.append(row)
     return obs
      
   def _take_action(self, action): # Buy Sell ect..
