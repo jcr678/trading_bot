@@ -34,9 +34,11 @@ class CustomEnv(gym.Env):
           n_columns = dataFrame_list[stock].columns
       else:  # otherwise, join this data to the main one
           main_df = main_df.join(dataFrame_list[stock])
-
+          
+    main_df.dropna(inplace=True) #drop nan values
+    
     self.stocks_list = stocks_list
-    self.reward_range = (-MAX_ACCOUNT_BALANCE, MAX_ACCOUNT_BALANCE) # go negative if u buy when no money/sell when no stock
+    self.reward_range = (0, MAX_ACCOUNT_BALANCE)
     self.n_stocks = len(stocks_list)
     self.dataFrame = main_df
     self.cur_step = 0
@@ -51,11 +53,11 @@ class CustomEnv(gym.Env):
     self.action_space = spaces.Box(low=0, high=1, shape=(self.n_stocks*2,) dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
     self.observation_space = spaces.Box(low=0, high=1, shape=(((self.n_observes+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
-                                        dtype=np.float16)
+                                        dtype=np.float16) # Need to change shape because basic values are diff for diff stocks
   def _next_observation(self):
     frame = []
     for stock in self.stocks_list:
-        f = np.array([[ #assuming normalized
+        f = np.array([[ #assuming normalized between 0 and 1
                     df.loc[self.current_step - self.n_observes: self.current_step,
                            f"{stock}_Date"].values,
                     df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Time"].values,
@@ -74,10 +76,10 @@ class CustomEnv(gym.Env):
     obs = np.append(frame, [ # has length of basic_values
                 balance / MAX_ACCOUNT_BALANCE,
                 max_net_worth / MAX_ACCOUNT_BALANCE,
-                shares_held / MAX_NUM_SHARES, # Turn into dicts??
-                cost_basis / MAX_SHARE_PRICE, # Turn into dicts??
-                total_shares_sold / MAX_NUM_SHARES, # Turn into dicts??
-                total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE), # Turn into dicts??
+                shares_held / MAX_NUM_SHARES, # Need to update all use list
+                cost_basis / MAX_SHARE_PRICE, # Need to update all use list
+                total_shares_sold / MAX_NUM_SHARES, # Need to update all use list
+                total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE), # ?Need to update all use list?
             ], axis=0)
     return obs
      
@@ -85,29 +87,29 @@ class CustomEnv(gym.Env):
         #use self.isATest to know if u actually buy stocks
         for i, stock in enumerate(self.stocks_list): # take actions
           if action[i*2] < 1.0/3.0: # buy
-           buy(self, action[i*2+1], stock)
+           buy(self, action[i*2+1], stock, i)
           else if action[i*2] > 2.0/3.0: # sell
-            sell(self, action[i*2+1], stock)
+            sell(self, action[i*2+1], stock, i)
           #hold (do nothing so no statement)
       
-  def buy(self, n_percent, stock):
+  def buy(self, n_percent, stock, i):
         price = main_df.at(self.step, f"{stock}_Price")
         if self.isATest: #dont use alpaca
           # Buy amount % of balance in shares
           total_possible = int(self.balance / (price * self.n_stocks))
           shares_bought = int(total_possible * n_percent)
-          prev_cost = self.cost_basis[stock] * self.shares_held[stock] # need to turn shares held and cost basis into dicts!
-          additional_cost = shares_bought * current_price
+          prev_cost = self.cost_basis[i] * self.shares_held[i] # need to turn shares held and cost basis arrays
+          additional_cost = shares_bought * price
 
           self.balance -= additional_cost
-          self.cost_basis[stock] = (
-                prev_cost + additional_cost) / (self.shares_held[stock] + shares_bought)
-          self.shares_held[stock] += shares_bought
+          self.cost_basis[i] = (
+                prev_cost + additional_cost) / (self.shares_held[i] + shares_bought)
+          self.shares_held[i] += shares_bought
 
         else: #use alpaca
           
     
-  def sell(self, n_percent, stock):
+  def sell(self, n_percent, stock, i):
         price = main_df.at(self.step, f"{stock}_Price")
         if self.isATest:
           #dont use alpaca
@@ -136,10 +138,10 @@ class CustomEnv(gym.Env):
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.net_worth = INITIAL_ACCOUNT_BALANCE
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
-        self.shares_held = 0
-        self.cost_basis = 0
-        self.total_shares_sold = 0
-        self.total_sales_value = 0
+        self.shares_held = [0] * self.n_stocks
+        self.cost_basis = [0] * self.n_stocks
+        self.total_shares_sold = [0] * self.n_stocks
+        self.total_sales_value = 0 # ???? idk ill figure out when i do sell
 
         # Set the current step to a random point within the data frame
         self.current_step = random.randint(
