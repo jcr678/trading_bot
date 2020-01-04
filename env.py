@@ -83,39 +83,40 @@ class CustomEnv(gym.Env):
      
   def _take_action(self, action): # Buy Sell ect..
         #use self.isATest to know if u actually buy stocks
-        punish = 0
-        if self.isATest: #test
+        for i, stock in enumerate(self.stocks_list): # take actions
+          if action[i*2] < 1.0/3.0: # buy
+           buy(self, action[i*2+1], stock)
+          else if action[i*2] > 2.0/3.0: # sell
+            sell(self, action[i*2+1], stock)
+          #hold (do nothing so no statement)
+      
+  def buy(self, n_percent, stock):
+        price = main_df.at(self.step, f"{stock}_Price")
+        if self.isATest: #dont use alpaca
+          # Buy amount % of balance in shares
+          total_possible = int(self.balance / (price * self.n_stocks))
+          shares_bought = int(total_possible * n_percent)
+          prev_cost = self.cost_basis[stock] * self.shares_held[stock] # need to turn shares held and cost basis into dicts!
+          additional_cost = shares_bought * current_price
+
+          self.balance -= additional_cost
+          self.cost_basis[stock] = (
+                prev_cost + additional_cost) / (self.shares_held[stock] + shares_bought)
+          self.shares_held[stock] += shares_bought
+
+        else: #use alpaca
           
-          for i, stock in enumerate(self.stocks_list): # take actions and edit punish
-            if action[i*2] < 1.0/3.0: # buy
-              punish += test_buy(self, action[i*2+1], stock)
-            else if action[i*2] > 2.0/3.0: # sell
-              punish += test_sell(self, action[i*2+1], stock)
-            #hold (do nothing so no statement)
-            
-        else: # Not a test (use alpaca)
+    
+  def sell(self, n_percent, stock):
+        price = main_df.at(self.step, f"{stock}_Price")
+        if self.isATest:
+          #dont use alpaca
+        else:
+          #use alpaca
           
-          for i, stock in enumerate(self.stocks_list): # take actions and edit punish
-            if action[i*2] < 1.0/3.0: # buy
-              punish += test_buy(self, action[i*2+1], stock)
-            else if action[i*2] > 2.0/3.0: # sell
-              punish += test_sell(self, action[i*2+1], stock)
-            #hold (do nothing so no statement)
-        return punish
-      
-  def test_buy(self, n_percent, stock): # do not call alpaca/robinhood
-        #if buy more than $ return 1 for punish else return 0
-      
-  def real_buy(self, n_percent, stock): # call alpaca/robinhood
-        #if buy more than $ return 1 for punish else return 0
-      
-  def test_sell(self, n_percent, stock): # do not call alpaca/robinhood
-        #if sell more than stock return 1 for punish else return 0
-  def real_sell(self, n_percent, stock): # call alpaca/robinhood
-        #if sell more than stock return 1 for punish else return 0
   def _step(self, action):
         # Execute one time step within the environment
-        self.punish = self._take_action(action) # Need to punish if we sell when we dont have stock/buy when have not enough $
+        self._take_action(action) 
 
         self.current_step += 1
 
@@ -124,8 +125,7 @@ class CustomEnv(gym.Env):
 
         delay_modifier = (self.current_step / MAX_STEPS)
         
-        #not sure if this is a great equation but it'll have to do for now
-        reward = self.balance * delay_modifier - self.punish * self.balance * delay_modifier #Use self.punish here
+        reward = self.balance * delay_modifier
         done = self.net_worth <= 0
 
         obs = self._next_observation()
