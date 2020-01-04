@@ -48,7 +48,7 @@ class CustomEnv(gym.Env):
     self.isATest = isATest # Boolean: call alpaca or do not call alpaca
     
     # Action space: discrete # of action types (buy, sell, and hold) &
-    # continuous spectrum of amounts to buy/sell (0-100% of account/n_stocks).
+    # continuous spectrum of amounts to buy/sell (0-100% of balance/n_stocks or shares_held/n_stocks).
     # Actions are 0,1,2 and percent/n for n stocks
     self.action_space = spaces.Box(low=0, high=1, shape=(self.n_stocks*2,) dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
