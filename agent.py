@@ -2,8 +2,8 @@
 from collections import deque
 import random
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, LSTM, CuDNNLSTM, BatchNormalization
 from keras.optimizers import Adam
 import pickle
 
@@ -17,7 +17,9 @@ class DQNAgent(object):
     self.epsilon = 1.0  # exploration rate
     self.epsilon_min = 0.01
     self.epsilon_decay = 0.995
-    self.model = mlp(state_size, action_size)
+    #self.model = mlp(state_size, action_size)
+    self.model = rnn(state_size, action_size)
+  '''
   def mlp(n_obs, n_action, n_hidden_layer=1, n_neuron_per_layer=32,
         activation='relu', loss='mse'):
     """ A multi-layer perceptron """
@@ -29,7 +31,26 @@ class DQNAgent(object):
     model.compile(loss=loss, optimizer=Adam())
     print(model.summary())
     return model
+  '''
+  def rnn(self, n_obs, n_action,):
+    model = Sequential()
+    model.add(CuDNNLSTM(128, input_shape=(n_obs,), return_sequences=True))
+    model.add(Dropout(0.2))
+    model.add(BatchNormalization())  #normalizes activation outputs, same reason you want to normalize your input data.
 
+    model.add(CuDNNLSTM(128, return_sequences=True))
+    model.add(Dropout(0.1))
+    model.add(BatchNormalization())
+
+    model.add(CuDNNLSTM(128))
+    model.add(Dropout(0.2))
+    model.add(BatchNormalization())
+
+    model.add(Dense(32, activation='relu'))
+    model.add(Dropout(0.2))
+
+    model.add(Dense(shape=(n_action,), activation='sigmoid')) # will output n_actions with values between 0 and 1
+    return model
   def remember(self, state, action, reward, next_state, done):
     self.memory.append((state, action, reward, next_state, done))
 
