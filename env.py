@@ -32,7 +32,7 @@ class CustomEnv(gym.Env):
                                             'Subjectivity': f"{stock}_Subjectivity",}, inplace=True)
       if len(main_df)==0:  # If dataframe is empty
           main_df = dataFrame_list[stock]  # then it's just the current df
-          n_columns = dataFrame_list[stock].columns
+          n_columns = dataFrame_list[stock].columns - 2 # dont include date/time
       else:  # otherwise, join this data to the main one
           dataFrame_list[stock].drop(columns=['Date', 'Time']) # Delete the date/time if it is not the first stock b/c repeats
           main_df = main_df.join(dataFrame_list[stock])
@@ -46,7 +46,8 @@ class CustomEnv(gym.Env):
     self.cur_step = 0
     self.n_observes = 2*60*24 # not including current observe (must add one)
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
-    self.basic_values = 6 # balance, net worth ect
+    self.shared_vals = 2 # balance, net worth
+    self.unshared_vals = 4 # shares held, cost basis, ect...
     self.isATest = isATest # Boolean: call alpaca or do not call alpaca
     
     # Action space: discrete # of action types (buy, sell, and hold) &
@@ -54,11 +55,12 @@ class CustomEnv(gym.Env):
     # Actions are 0,1,2 and percent/n for n stocks
     self.action_space = spaces.Box(low=0, high=1, shape=(self.n_stocks*2,) dtype=np.float16)
     # Observations are ohlc ect as percentages for n observations and n stocks
-    self.observation_space = spaces.Box(low=0, high=1, shape=(((self.n_observes+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)),
+    self.observation_space = spaces.Box(low=0, high=1, shape=(self.n_observes+1, 
+                                                              self.shared_vals+(self.n_columns+self.unshared_vals)*self.n_stocks),
                                         dtype=np.float16) # Need to change shape because basic values are diff for diff stocks
   def _next_observation(self):
     '''
-    for stock in self.stocks_list:
+    for stock in self.stocks_list:shape=(((self.n_observes+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)
         f = np.array([[ #assuming normalized between 0 and 1
                     df.loc[self.current_step - self.n_observes: self.current_step,
                            f"{stock}_Date"].values,
@@ -85,12 +87,12 @@ class CustomEnv(gym.Env):
     '''
     obs = []
     for i in range(self.current_step - self.n_observes, self.current_step+1):
-        #get given row as list
+        # get given row as list
         row = self.main_df.iloc[[i]].tolist()
-        #append other data to list (data that is observed by all stocks)
+        # data shared by all stocks)
         row.append(balance / MAX_ACCOUNT_BALANCE)
         row.append(max_net_worth / MAX_ACCOUNT_BALANCE)
-        #append data that is tied to a given stock and not observed by all stocks
+        # data tied to a given stock and not shared by all stocks
         for i, stock in self.stocks_list:
             row.append(self.shares_held[i] / MAX_NUM_SHARES)
             row.append(cost_basis[i] / MAX_SHARE_PRICE)
@@ -176,7 +178,7 @@ class CustomEnv(gym.Env):
         self.shares_held = [0] * self.n_stocks
         self.cost_basis = [0] * self.n_stocks
         self.total_shares_sold = [0] * self.n_stocks
-        self.total_sales_value = 0 # ???? idk ill figure out when i do sell
+        self.total_sales_value = [0] * self.n_stocks # ???? idk ill figure out when i do sell
 
         # Set the current step to a random point within the data frame
         self.current_step = random.randint(
