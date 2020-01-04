@@ -74,10 +74,10 @@ class CustomEnv(gym.Env):
     obs = np.append(frame, [ # has length of basic_values
                 balance / MAX_ACCOUNT_BALANCE,
                 max_net_worth / MAX_ACCOUNT_BALANCE,
-                shares_held / MAX_NUM_SHARES,
-                cost_basis / MAX_SHARE_PRICE,
-                total_shares_sold / MAX_NUM_SHARES,
-                total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
+                shares_held / MAX_NUM_SHARES, # Turn into dicts??
+                cost_basis / MAX_SHARE_PRICE, # Turn into dicts??
+                total_shares_sold / MAX_NUM_SHARES, # Turn into dicts??
+                total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE), # Turn into dicts??
             ], axis=0)
     return obs
      
