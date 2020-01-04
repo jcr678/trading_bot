@@ -8,12 +8,15 @@ import random
 import pandas as pd
 import numpy as np
 
-MAX_ACCOUNT_BALANCE = 2147483647
-MAX_NUM_SHARES = 2147483647
-MAX_SHARE_PRICE = 20000
-MAX_STEPS = 90000 # We need to figure out what this number actually would be... No idea.
+MAX_VOLUME = 2147483647.0 # Can be changed later to smaller value
+MAX_ACCOUNT_BALANCE = 2147483647.0
+MAX_NUM_SHARES = 2147483647.0
+MAX_SHARE_PRICE = 10000.0
+MAX_STEPS = 90000.0 # We need to figure out what this number actually would be... No idea.
+MAX_DATE = 12292100.0 # monthDayYear
+MAX_TIME = 2400 # 12 at night
 
-INITIAL_ACCOUNT_BALANCE = 10000
+INITIAL_ACCOUNT_BALANCE = 10000.0
 
 
 class CustomEnv(gym.Env):
@@ -23,7 +26,7 @@ class CustomEnv(gym.Env):
     main_df = pd.DataFrame()
     for stock in stocks_list: # Join all stocks df into single df
       dataFrame_list[stock].rename(columns={'Price': f"{stock}_Price",'50-Day MA': f"{stock}_50-Day MA",\\
-                                            '200-Day MA': f"{stock}_200-Day MA",'Market Open': f"{stock}_Market Open",\\
+                                            '200-Day MA': f"{stock}_200-Day MA",\\
                                             'Market Open': f"{stock}_Market Open",'Prev Close': f"{stock}_Prev Close",\\
                                             'Trading Volume': f"{stock}_Trading Volume",'Sentiment': f"{stock}_Sentiment",\\
                                             'Subjectivity': f"{stock}_Subjectivity",}, inplace=True)
@@ -39,7 +42,7 @@ class CustomEnv(gym.Env):
     self.stocks_list = stocks_list
     self.reward_range = (0, MAX_ACCOUNT_BALANCE)
     self.n_stocks = len(stocks_list)
-    self.dataFrame = main_df
+    self.main_df = normalizeBetweenZeroAndOne(main_df)
     self.cur_step = 0
     self.n_observes = 2*60*24 # not including current observe (must add one)
     self.OHLC_ect = columns  # Open high low close, sentiment ect...
@@ -69,7 +72,6 @@ class CustomEnv(gym.Env):
                     df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Sentiment"].values,
                     df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Subjectivity"].values
                 ]])
-
         frame = np.append(frame, f)
                     # Append additional data and scale each value to between 0-1
     obs = np.append(frame, [ # has length of basic_values
@@ -84,7 +86,7 @@ class CustomEnv(gym.Env):
     obs = []
     for i in range(self.current_step - self.n_observes, self.current_step+1):
         #get given row as list
-        row = main_df.iloc[[i]].tolist()
+        row = self.main_df.iloc[[i]].tolist()
         #append other data to list (data that is observed by all stocks)
         row.append(balance / MAX_ACCOUNT_BALANCE)
         row.append(max_net_worth / MAX_ACCOUNT_BALANCE)
@@ -97,7 +99,25 @@ class CustomEnv(gym.Env):
         #append the row to the obs
         obs.append(row)
     return obs
-     
+
+  def normalizeBetweenZeroAndOne(main_df):
+        # update date
+        dates = main_df['Date'].toList()
+        main_df['Date'] = [float(day.strip())/MAX_DATE for day in dates] # get dates w/out spaces as floats; divided by max date
+        # update time
+        time = main_df['Time'].toList()
+        
+        amountsLikePrice = ["Price", "50-Day MA", '200-Day MA', 'Market Open', 'Prev Close'] #can divide by max share price
+        for stock in self.stocks_list:
+            for amount in amountsLikePrice:
+                column = stock + "_" + other
+                likePriceList = main_df[column]
+                main_df[column] = [p/MAX_SHARE_PRICE for p in likePriceList]
+            #volume
+            volList = main_df[stock + "_" + 'Trading Volume']
+            main_df[stock + "_" + 'Trading Volume'] = [v/MAX_VOLUME for v in volList]
+        #other columns already between 0 and 1
+        return main_df
   def _take_action(self, action): # Buy Sell ect..
         #use self.isATest to know if u actually buy stocks
         for i, stock in enumerate(self.stocks_list): # take actions
