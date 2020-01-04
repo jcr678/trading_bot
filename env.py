@@ -103,10 +103,10 @@ class CustomEnv(gym.Env):
   def normalizeBetweenZeroAndOne(main_df):
         # update date
         dates = main_df['Date'].toList()
-        main_df['Date'] = [float(day.strip())/MAX_DATE for day in dates] # get dates w/out spaces as floats; divided by max date
+        main_df['Date'] = [float(day.strip())/MAX_TIME for day in dates] # get dates w/out spaces as floats; divided by max date
         # update time
         time = main_df['Time'].toList()
-        
+        main_df['Time'] = [float(t[0:2] + t[3:])/MAX_DATE for t in time] #delete colon and div by max time
         amountsLikePrice = ["Price", "50-Day MA", '200-Day MA', 'Market Open', 'Prev Close'] #can divide by max share price
         for stock in self.stocks_list:
             for amount in amountsLikePrice:
