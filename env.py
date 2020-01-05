@@ -45,7 +45,7 @@ class CustomEnv(gym.Env):
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
         self.n_stocks = len(stocks_list)
         self.main_df = self.normalizeBetweenZeroAndOne(main_df)
-        self.cur_step = 0
+        self.current_step = 0
         self.n_observes = 2*60*24 # not including current observe (must add one)
         self.OHLC_ect = n_columns  # Open high low close, sentiment ect...
         self.shared_vals = 2 # balance, net worth
@@ -92,14 +92,14 @@ class CustomEnv(gym.Env):
             # get given row as list
             row = self.main_df.iloc[[i]].values.tolist()
             # data shared by all stocks)
-            row.append(balance / MAX_ACCOUNT_BALANCE)
-            row.append(max_net_worth / MAX_ACCOUNT_BALANCE)
+            row.append(self.balance / MAX_ACCOUNT_BALANCE)
+            row.append(self.max_net_worth / MAX_ACCOUNT_BALANCE)
             # data tied to a given stock and not shared by all stocks
-            for i, stock in self.stocks_list:
+            for i, stock in enumerate(self.stocks_list):
                 row.append(self.shares_held[i] / MAX_NUM_SHARES)
-                row.append(cost_basis[i] / MAX_SHARE_PRICE)
-                row.append(total_shares_sold[i] / MAX_NUM_SHARES)
-                row.append(total_sales_value[i] / (MAX_NUM_SHARES * MAX_SHARE_PRICE))
+                row.append(self.cost_basis[i] / MAX_SHARE_PRICE)
+                row.append(self.total_shares_sold[i] / MAX_NUM_SHARES)
+                row.append(self.total_sales_value[i] / (MAX_NUM_SHARES * MAX_SHARE_PRICE))
                 #append the row to the obs
             obs.append(row)
         return obs
@@ -133,8 +133,6 @@ class CustomEnv(gym.Env):
         time = main_df['Time'].values
         main_df['Time'] = [float(t[0:2] + t[3:])/MAX_DATE for t in time] #delete colon and div by max time
         amountsLikePrice = ["Price", "50-Day MA", '200-Day MA', 'Market Open', 'Prev Close'] #can divide by max share price
-        for col in main_df.columns:
-            print(col)
         for stock in self.stocks_list:
             for amount in amountsLikePrice:
                 column = stock + "_" + amount
@@ -190,7 +188,7 @@ class CustomEnv(gym.Env):
 
         self.current_step += 1
 
-        if self.current_step > len(main_df.index) - 1:
+        if self.current_step > len(self.main_df.index) - 1:
             self.current_step = 0
 
         delay_modifier = (self.current_step / MAX_STEPS)
@@ -214,7 +212,7 @@ class CustomEnv(gym.Env):
 
         # Set the current step to a random point within the data frame
         self.current_step = random.randint(
-            0, len(main_df.index) - 1)
+            0, len(self.main_df.index) - 1)
 
         return self._next_observation()
 
