@@ -2,6 +2,7 @@
 # ^^ full github to above: https://github.com/notadamking/Stock-Trading-Environment
 # https://github.com/llSourcell/Q-Learning-for-Trading/blob/master/envs.py
 
+from replaceZeros import replaceZeros
 import gym
 from gym import spaces
 import random
@@ -25,6 +26,7 @@ class CustomEnv(gym.Env):
 
         main_df = pd.DataFrame()
         for stock in stocks_list: # Join all stocks df into single df
+            dataFrame_List[stock] = replaceZeros(dataFrame_List[stock]) #get rid of sent/subj zeros
             dataFrame_list[stock].rename(columns={'Price': f"{stock}_Price",'50-Day MA': f"{stock}_50-Day MA", \
                                             '200-Day MA': f"{stock}_200-Day MA",\
                                             'Market Open': f"{stock}_Market Open",'Prev Close': f"{stock}_Prev Close",\
