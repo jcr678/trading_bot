@@ -61,36 +61,11 @@ class CustomEnv(gym.Env):
                                                               self.shared_vals+(self.OHLC_ect+self.unshared_vals)*self.n_stocks),
                                         dtype=np.float16) # Need to change shape because basic values are diff for diff stocks
     def _next_observation(self):
-        '''
-        for stock in self.stocks_list:shape=(((self.n_observes+1)*self.OHLC_ect*self.n_stocks+self.basic_values,)
-        f = np.array([[ #assuming normalized between 0 and 1
-                    df.loc[self.current_step - self.n_observes: self.current_step,
-                           f"{stock}_Date"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Time"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Price"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_50-Day MA"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_200-Day MA"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Market Open"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Prev Close"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Trading Volume"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Sentiment"].values,
-                    df.loc[self.current_step - self.n_observes: self.current_step, f"{stock}_Subjectivity"].values
-                ]])
-        frame = np.append(frame, f)
-                    # Append additional data and scale each value to between 0-1
-        obs = np.append(frame, [ # has length of basic_values
-                balance / MAX_ACCOUNT_BALANCE,
-                max_net_worth / MAX_ACCOUNT_BALANCE,
-                shares_held / MAX_NUM_SHARES, # Need to update all use list
-                cost_basis / MAX_SHARE_PRICE, # "SAME" MAYBE DELETE COST BASIS IDK
-                total_shares_sold / MAX_NUM_SHARES, # Need to update all use list
-                total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE), # ?Need to update all use list?
-            ], axis=0)
-        '''
         obs = []
         for i in range(self.current_step - self.n_observes, self.current_step+1):
             # get given row as list
-            row = self.main_df.iloc[[i]].values.tolist()
+            
+            row = list(self.main_df.iloc[i, :])
             # data shared by all stocks)
             row.append(self.balance / MAX_ACCOUNT_BALANCE)
             row.append(self.max_net_worth / MAX_ACCOUNT_BALANCE)
@@ -102,7 +77,7 @@ class CustomEnv(gym.Env):
                 row.append(self.total_sales_value[i] / (MAX_NUM_SHARES * MAX_SHARE_PRICE))
                 #append the row to the obs
             obs.append(row)
-        return obs
+        return np.array(obs)
     def dateToFloat(self, day):
         toReturn = ""
         monthDict = {
