@@ -1,15 +1,20 @@
 import scrape
 import models
 import sentiment
+import pandas as pd
+from env import CustomEnv
 
 def main():
     scrape.scrape()
     # scrape.display_information()
-def test_actor_critic():
-    pass
-def test_q_learning():
-    pass
+
+
 if __name__ == "__main__":
-    main()
-    test_actor_critic()
-    test_q_learning()
+    #main()
+    #get the csv files as dicts
+    stocks_list = ['TSLA', 'GOOGL', 'AAPL', 'MSFT', 'BABA']
+    stock_dict = {}
+    for stock in stocks_list:
+        stock_dict[stock] = pd.read_csv(stock + '.csv')
+    #pass to env
+    env = CustomEnv(stock_dict, stocks_list, True)
