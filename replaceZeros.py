@@ -1,6 +1,6 @@
 import pandas as pd
 def replaceZeros(dataframe):
-    dataframe = pd.read_csv(dataframe)
+    #dataframe = pd.read_csv(dataframe)
     #get date and sentiment and subjectivity columns
     date = dataframe['Date'].tolist()
     sent = dataframe['Sentiment'].tolist()
