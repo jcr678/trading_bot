@@ -23,29 +23,31 @@ class CustomEnv(gym.Env):
     def __init__(self, dataFrame_list, stocks_list, isATest): # order of df list and stocks list MUST be same
         super(CustomEnv, self).__init__()
 
-        main_df = pd.DataFrame()
+        #merge csv's and rename the rows
+        main_list = []
         for stock in stocks_list: # Join all stocks df into single df
             dataFrame_list[stock].rename(columns={'Price': f"{stock}_Price",'50-Day MA': f"{stock}_50-Day MA", \
                                             '200-Day MA': f"{stock}_200-Day MA",\
                                             'Market Open': f"{stock}_Market Open",'Prev Close': f"{stock}_Prev Close",\
                                             'Trading Volume': f"{stock}_Trading Volume",'Sentiment': f"{stock}_Sentiment",\
                                             'Subjectivity': f"{stock}_Subjectivity",}, inplace=True)
-        if len(main_df)==0:  # If dataframe is empty
-          main_df = dataFrame_list[stock]  # then it's just the current df
-          n_columns = len(dataFrame_list[stock].columns) - 2 # dont include date/time
-        else:  # otherwise, join this data to the main one
-          dataFrame_list[stock].drop(columns=['Date', 'Time']) # Delete the date/time if it is not the first stock b/c repeats
-          main_df = main_df.join(dataFrame_list[stock])
-
+            if len(main_list)==0:  # If dataframe is empty
+                #main_df = dataFrame_list[stock]  # then it's just the current df
+                main_list.append(dataFrame_list[stock])
+                n_columns = len(dataFrame_list[stock].columns) - 2 # dont include date/time
+            else:  # otherwise, join this data to the main one
+                dataFrame_list[stock].drop(columns=['Date', 'Time'], inplace=True) # Delete the date/time if it is not the first stock b/c repeats
+                main_list.append(dataFrame_list[stock])
+        main_df = pd.concat(main_list,axis=1)
         main_df.dropna(inplace=True) #drop nan values
-
+        
         self.stocks_list = stocks_list
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
         self.n_stocks = len(stocks_list)
         self.main_df = self.normalizeBetweenZeroAndOne(main_df)
         self.cur_step = 0
         self.n_observes = 2*60*24 # not including current observe (must add one)
-        self.OHLC_ect = columns  # Open high low close, sentiment ect...
+        self.OHLC_ect = n_columns  # Open high low close, sentiment ect...
         self.shared_vals = 2 # balance, net worth
         self.unshared_vals = 4 # shares held, cost basis, ect...
         self.isATest = isATest # Boolean: call alpaca or do not call alpaca
@@ -56,7 +58,7 @@ class CustomEnv(gym.Env):
         self.action_space = spaces.Box(low=0, high=1, shape=(self.n_stocks*2,), dtype=np.float16)
         # Observations are ohlc ect as percentages for n observations and n stocks
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.n_observes+1, 
-                                                              self.shared_vals+(self.n_columns+self.unshared_vals)*self.n_stocks),
+                                                              self.shared_vals+(self.OHLC_ect+self.unshared_vals)*self.n_stocks),
                                         dtype=np.float16) # Need to change shape because basic values are diff for diff stocks
     def _next_observation(self):
         '''
@@ -131,6 +133,8 @@ class CustomEnv(gym.Env):
         time = main_df['Time'].values
         main_df['Time'] = [float(t[0:2] + t[3:])/MAX_DATE for t in time] #delete colon and div by max time
         amountsLikePrice = ["Price", "50-Day MA", '200-Day MA', 'Market Open', 'Prev Close'] #can divide by max share price
+        for col in main_df.columns:
+            print(col)
         for stock in self.stocks_list:
             for amount in amountsLikePrice:
                 column = stock + "_" + amount
