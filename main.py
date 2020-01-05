@@ -18,3 +18,5 @@ if __name__ == "__main__":
         stock_dict[stock] = pd.read_csv(stock + '.csv')
     #pass to env
     env = CustomEnv(stock_dict, stocks_list, True)
+    env.reset()
+    print(env._next_observation())
