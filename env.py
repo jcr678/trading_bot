@@ -2,7 +2,6 @@
 # ^^ full github to above: https://github.com/notadamking/Stock-Trading-Environment
 # https://github.com/llSourcell/Q-Learning-for-Trading/blob/master/envs.py
 
-from replaceZeros import replaceZeros
 import gym
 from gym import spaces
 import random
@@ -26,7 +25,6 @@ class CustomEnv(gym.Env):
 
         main_df = pd.DataFrame()
         for stock in stocks_list: # Join all stocks df into single df
-            dataFrame_List[stock] = replaceZeros(dataFrame_List[stock]) #get rid of sent/subj zeros
             dataFrame_list[stock].rename(columns={'Price': f"{stock}_Price",'50-Day MA': f"{stock}_50-Day MA", \
                                             '200-Day MA': f"{stock}_200-Day MA",\
                                             'Market Open': f"{stock}_Market Open",'Prev Close': f"{stock}_Prev Close",\
@@ -34,7 +32,7 @@ class CustomEnv(gym.Env):
                                             'Subjectivity': f"{stock}_Subjectivity",}, inplace=True)
         if len(main_df)==0:  # If dataframe is empty
           main_df = dataFrame_list[stock]  # then it's just the current df
-          n_columns = dataFrame_list[stock].columns - 2 # dont include date/time
+          n_columns = len(dataFrame_list[stock].columns) - 2 # dont include date/time
         else:  # otherwise, join this data to the main one
           dataFrame_list[stock].drop(columns=['Date', 'Time']) # Delete the date/time if it is not the first stock b/c repeats
           main_df = main_df.join(dataFrame_list[stock])
@@ -44,7 +42,7 @@ class CustomEnv(gym.Env):
         self.stocks_list = stocks_list
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
         self.n_stocks = len(stocks_list)
-        self.main_df = normalizeBetweenZeroAndOne(main_df)
+        self.main_df = self.normalizeBetweenZeroAndOne(main_df)
         self.cur_step = 0
         self.n_observes = 2*60*24 # not including current observe (must add one)
         self.OHLC_ect = columns  # Open high low close, sentiment ect...
@@ -90,7 +88,7 @@ class CustomEnv(gym.Env):
         obs = []
         for i in range(self.current_step - self.n_observes, self.current_step+1):
             # get given row as list
-            row = self.main_df.iloc[[i]].tolist()
+            row = self.main_df.iloc[[i]].values.tolist()
             # data shared by all stocks)
             row.append(balance / MAX_ACCOUNT_BALANCE)
             row.append(max_net_worth / MAX_ACCOUNT_BALANCE)
@@ -103,33 +101,54 @@ class CustomEnv(gym.Env):
                 #append the row to the obs
             obs.append(row)
         return obs
-
-    def normalizeBetweenZeroAndOne(main_df):
+    def dateToFloat(self, day):
+        toReturn = ""
+        monthDict = {
+            'Jan':'1',
+            'Feb':'2',
+            'Mar':'3',
+            'Apr':'4',
+            'May':'5',
+            'June':'6',
+            'July':'7',
+            'Aug': '8',
+            'Sept':'9',
+            'Oct':'10',
+            'Nov' :'11',
+            'Dec':'12'
+        }
+        listDay = day.split()
+        listDay[0] = monthDict[listDay[0]]
+        listDay[1] = listDay[1].replace(",", "")
+        toReturn = float(listDay[0] + listDay[1] + listDay[2])
+        #split into an array to deal with month, day year separately
+        return toReturn
+    def normalizeBetweenZeroAndOne(self, main_df):
         # update date
-        dates = main_df['Date'].toList()
-        main_df['Date'] = [float(day.strip())/MAX_TIME for day in dates] # get dates w/out spaces as floats; divided by max date
+        dates = main_df['Date'].values
+        main_df['Date'] = [float(self.dateToFloat(day)/MAX_TIME) for day in dates] # get dates w/out spaces as floats; divided by max date
         # update time
-        time = main_df['Time'].toList()
+        time = main_df['Time'].values
         main_df['Time'] = [float(t[0:2] + t[3:])/MAX_DATE for t in time] #delete colon and div by max time
         amountsLikePrice = ["Price", "50-Day MA", '200-Day MA', 'Market Open', 'Prev Close'] #can divide by max share price
         for stock in self.stocks_list:
             for amount in amountsLikePrice:
-                column = stock + "_" + other
-                likePriceList = main_df[column]
+                column = stock + "_" + amount
+                likePriceList = main_df[column].values
                 main_df[column] = [p/MAX_SHARE_PRICE for p in likePriceList]
             #volume
             volList = main_df[stock + "_" + 'Trading Volume']
             main_df[stock + "_" + 'Trading Volume'] = [v/MAX_VOLUME for v in volList]
         #other columns already between 0 and 1
         return main_df
-        def _take_action(self, action): # Buy Sell ect..
+    def _take_action(self, action): # Buy Sell ect..
         #use self.isATest to know if u actually buy stocks
-            for i, stock in enumerate(self.stocks_list):
-                if action[i*2] < 1.0/3.0: # buy
-                    buy(self, action[i*2+1], stock, i)
-                elif action[i*2] > 2.0/3.0: # sell
-                    sell(self, action[i*2+1], stock, i)
-                    #hold (do nothing so no statement)
+        for i, stock in enumerate(self.stocks_list):
+            if action[i*2] < 1.0/3.0: # buy
+                buy(self, action[i*2+1], stock, i)
+            elif action[i*2] > 2.0/3.0: # sell
+                sell(self, action[i*2+1], stock, i)
+                #hold (do nothing so no statement)
 
     def buy(self, n_percent, stock, i):
         price = main_df.at(self.step, f"{stock}_Price")
