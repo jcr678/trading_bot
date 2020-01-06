@@ -1,4 +1,5 @@
 #I want to credit the creator of this code, ShuaiW on github.
+#also help from https://github.com/the-deep-learners/TensorFlow-LiveLessons/blob/master/notebooks/cartpole_dqn.ipynb
 from collections import deque
 import random
 import numpy as np
@@ -18,8 +19,8 @@ class DQNAgent(object):
     self.epsilon_min = 0.01
     self.epsilon_decay = 0.995
     #self.model = mlp(state_size, action_size)
-    self.model = rnn(state_size, action_size)
-  '''
+    self.model = mlp(state_size, action_size)
+
   def mlp(n_obs, n_action, n_hidden_layer=1, n_neuron_per_layer=32,
         activation='relu', loss='mse'):
     """ A multi-layer perceptron """
@@ -51,6 +52,8 @@ class DQNAgent(object):
 
     model.add(Dense(shape=(n_action,), activation='sigmoid')) # will output n_actions with values between 0 and 1
     return model
+'''
+
   def remember(self, state, action, reward, next_state, done):
     self.memory.append((state, action, reward, next_state, done))
 
@@ -58,17 +61,18 @@ class DQNAgent(object):
     if np.random.rand() <= self.epsilon:
       return random.randrange(self.action_size)
     act_values = self.model.predict(state)
-    return np.argmax(act_values[0])  # returns action
+    return np.argmax(act_values)  # returns action: shape n_stock*[b/s/h, %]
 
 
   def replay(self, batch_size=32):
     """ vectorized implementation; 30x speed up compared with for loop """
+    
     minibatch = random.sample(self.memory, batch_size)
 
-    states = np.array([tup[0][0] for tup in minibatch])
+    states = np.array([tup[0] for tup in minibatch])
     actions = np.array([tup[1] for tup in minibatch])
     rewards = np.array([tup[2] for tup in minibatch])
-    next_states = np.array([tup[3][0] for tup in minibatch])
+    next_states = np.array([tup[3] for tup in minibatch])
     done = np.array([tup[4] for tup in minibatch])
 
     # Q(s', a)
@@ -85,8 +89,18 @@ class DQNAgent(object):
 
     if self.epsilon > self.epsilon_min:
       self.epsilon *= self.epsilon_decay
-
-
+    ''' # unvectorized version for comparison                                                   <(^_^<)
+    minibatch = random.sample(self.memory, batch_size) # sample a minibatch from memory
+        for state, action, reward, next_state, done in minibatch: # extract data for each minibatch sample
+            target = (reward + self.gamma * # (target) = reward + (discount rate gamma) * 
+                          np.amax(self.model.predict(next_state)[0])) # (maximum target Q based on future action a')
+            
+            target_f = self.model.predict(state) # approximately map current state to future discounted reward
+            target_f[0][action] = target
+            self.model.fit(state, target_f, epochs=1, verbose=0) # single epoch of training with x=state, y=target_f; fit decreases loss btwn target_f and y_hat
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+    '''
   def load(self, filename): #example of filename would be filename = 'finalized_model.sav'
     self.model = pickle.load(open(filename, 'rb')) # Pickle
 
