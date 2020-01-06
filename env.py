@@ -57,26 +57,19 @@ class CustomEnv(gym.Env):
         # Actions are 0,1,2 and percent/n for n stocks
         self.action_space = spaces.Box(low=0, high=1, shape=(self.n_stocks*2,), dtype=np.float16)
         # Observations are ohlc ect as percentages for n observations and n stocks
-        self.observation_space = spaces.Box(low=0, high=1, shape=(self.n_observes+1, 
-                                                              self.shared_vals+(self.OHLC_ect+self.unshared_vals)*self.n_stocks),
+        self.observation_space = spaces.Box(low=0, high=1, shape=(self.shared_vals+(self.OHLC_ect+self.unshared_vals)*self.n_stocks),
                                         dtype=np.float16) # Need to change shape because basic values are diff for diff stocks
     def _next_observation(self):
-        obs = []
-        for i in range(self.current_step - self.n_observes, self.current_step+1):
-            # get given row as list
-            
-            row = list(self.main_df.iloc[i, :])
-            # data shared by all stocks)
-            row.append(self.balance / MAX_ACCOUNT_BALANCE)
-            row.append(self.max_net_worth / MAX_ACCOUNT_BALANCE)
-            # data tied to a given stock and not shared by all stocks
-            for i, stock in enumerate(self.stocks_list):
-                row.append(self.shares_held[i] / MAX_NUM_SHARES)
-                row.append(self.cost_basis[i] / MAX_SHARE_PRICE)
-                row.append(self.total_shares_sold[i] / MAX_NUM_SHARES)
-                row.append(self.total_sales_value[i] / (MAX_NUM_SHARES * MAX_SHARE_PRICE))
-                #append the row to the obs
-            obs.append(row)
+        obs = list(self.main_df.iloc[self.current_step, :])
+        # data shared by all stocks)
+        obs.append(self.balance / MAX_ACCOUNT_BALANCE)
+        obs.append(self.max_net_worth / MAX_ACCOUNT_BALANCE)
+        # data tied to a given stock and not shared by all stocks
+        for i, stock in enumerate(self.stocks_list):
+            obs.append(self.shares_held[i] / MAX_NUM_SHARES)
+            obs.append(self.cost_basis[i] / MAX_SHARE_PRICE)
+            obs.append(self.total_shares_sold[i] / MAX_NUM_SHARES)
+            obs.append(self.total_sales_value[i] / (MAX_NUM_SHARES * MAX_SHARE_PRICE))
         return np.array(obs)
     def dateToFloat(self, day):
         toReturn = ""
