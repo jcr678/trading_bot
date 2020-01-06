@@ -141,7 +141,7 @@ class CustomEnv(gym.Env):
         price = main_df.at(self.step, f"{stock}_Price")
         if self.isATest:
             # Sell amount % of shares held
-            shares_sold = int(self.shares_held[i] * n_percent/self.n_stocks)
+            shares_sold = int(self.shares_held[i] * n_percent) # do not divide by n stocks be because it is for a specific stock
             self.balance += shares_sold * current_price
             self.shares_held[i] -= shares_sold
             self.total_shares_sold[i] += shares_sold
