@@ -46,18 +46,21 @@ class CustomEnv(gym.Env):
         self.n_stocks = len(stocks_list)
         self.main_df = self.normalizeBetweenZeroAndOne(main_df)
         self.current_step = 0
-        self.n_observes = 2*60*24 # not including current observe (must add one)
+        #self.n_observes = 2*60*24 # not including current observe (must add one)
         self.OHLC_ect = n_columns  # Open high low close, sentiment ect...
         self.shared_vals = 2 # balance, net worth
         self.unshared_vals = 4 # shares held, cost basis, ect...
         self.isATest = isATest # Boolean: call alpaca or do not call alpaca
-
-        # Action space: discrete # of action types (buy, sell, and hold) &
-        # continuous spectrum of amounts to buy/sell (0-100% of balance/n_stocks or shares_held/n_stocks).
-        # Actions are 0,1,2 and percent/n for n stocks
-        self.action_space = spaces.Box(low=0, high=1, shape=(self.n_stocks*2,), dtype=np.float16)
-        # Observations are ohlc ect as percentages for n observations and n stocks
-        self.observation_space = spaces.Box(low=0, high=1, shape=(self.shared_vals+(self.OHLC_ect+self.unshared_vals)*self.n_stocks),
+        self.choices = 2 # buy sell
+        self.percentOptions = 4 # .25, .5, .75, 1
+        
+        # Action space: one hot encoding. choose 1 stock out of n+1 to buy/sell and choose % .25, .5, .75, 1
+        # the n+1 option is to choose no stock and effectively hold.
+        self.acctions = (self.n_stocks+1)*self.choices*self.percentOptions
+        self.action_space = spaces.Box(low=0, high=1, shape=(self.actions,), dtype=np.int64)
+        # Observations are ohlc ect as percentages for n observations and n stocks. also shared/unshared values.
+        self.obbserves = self.shared_vals+(self.OHLC_ect+self.unshared_vals)*self.n_stocks)
+        self.observation_space = spaces.Box(low=0, high=1, shape=(self.obbserves,
                                         dtype=np.float16) # Need to change shape because basic values are diff for diff stocks
     def _next_observation(self):
         obs = list(self.main_df.iloc[self.current_step, :])
@@ -100,6 +103,7 @@ class CustomEnv(gym.Env):
         # update time
         time = main_df['Time'].values
         main_df['Time'] = [float(t[0:2] + t[3:])/MAX_DATE for t in time] #delete colon and div by max time
+        #amounts like price
         amountsLikePrice = ["Price", "50-Day MA", '200-Day MA', 'Market Open', 'Prev Close'] #can divide by max share price
         for stock in self.stocks_list:
             for amount in amountsLikePrice:
@@ -112,13 +116,32 @@ class CustomEnv(gym.Env):
         #other columns already between 0 and 1
         return main_df
     def _take_action(self, action): # Buy Sell ect..
-        #use self.isATest to know if u actually buy stocks
-        for i, stock in enumerate(self.stocks_list):
-            if action[i*2] < 1.0/3.0: # buy
-                buy(self, action[i*2+1], stock, i)
-            elif action[i*2] > 2.0/3.0: # sell
-                sell(self, action[i*2+1], stock, i)
-                #hold (do nothing so no statement)
+        # n_stocks+1 (stocks plus hold) sets of 8 elements
+        # of the 8 elements, 1st 4 indicate a buy, second 4 indicate a sell
+        # within each set of 4: 1 is 25%, 2 is 50%, .. 1 is 100%
+        
+        #find indice of one hot encoding:
+        indice = -1
+        for i, value in enumerate(action):
+            if value > 0: #one hot encoding
+                if indice != -1:
+                    print('ERROR')
+                indice = i
+                
+        
+        # find percent by mod 4 plus 1
+        percent = (indice % self.percentOptions) + 1 # 1 is 25%.. 4 is 100%                        
+        # find buy sell by dividing by 4 (round down)
+        buySell = indice / self.percentOptions # starts at 0
+        # find stock by dividing by 8
+        stock_index = indice / (self.percentOptions * self.choices) # starts at zero indice.
+        
+        if stock_index = self.n_stocks:
+            return # indice n_stocks indicates a hold
+        if buySell==0: 
+            buy(percent*.25, self.stocks_list[stock_index], stock_index)
+        else:
+            sell(percent*.25, self.stocks_list[stock_index], stock_index)
 
     def buy(self, n_percent, stock, i):
         price = main_df.at(self.step, f"{stock}_Price")
